@@ -1,0 +1,19 @@
+# Bỏ qua tất cả file .env trong mọi thư mục
+**/.env
+
+# Node.js (cho cả frontend và backend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+build/
+dist/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
