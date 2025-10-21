@@ -1,90 +1,103 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useCallback } from "react";
+import { Form, Input, Button, message } from "antd";
 import api from "../../api/axiosConfig";
+import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/form.css";
 
 const ThuocForm = () => {
+  const [form] = Form.useForm();
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    ten_thuoc: "",
-    cong_dung: "",
-  });
-
-  // 🟢 Nếu có id => đang sửa, tải dữ liệu thuốc
-  useEffect(() => {
-    if (id) {
-      api
-        .get(`/medicines/${id}`)
-        .then((res) => setFormData(res.data))
-        .catch(() => alert("Không thể tải dữ liệu thuốc cần sửa!"));
+  // 🟢 Lấy dữ liệu thuốc nếu đang sửa
+  const fetchMedicine = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await api.get(`/medicines/${id}`);
+      if (res.data) {
+        form.setFieldsValue({
+          ten_thuoc: res.data.ten_thuoc,
+          cong_dung: res.data.cong_dung,
+        });
+      }
+    } catch (error) {
+      console.error("fetchMedicine error:", error);
+      message.error("Lỗi khi tải dữ liệu thuốc cần sửa!");
     }
-  }, [id]);
+  }, [id, form]);
 
-  // 🧩 Cập nhật formData khi người dùng nhập
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    fetchMedicine();
+  }, [fetchMedicine]);
 
   // 🧩 Xử lý khi submit form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onFinish = async (values) => {
     try {
+      const payload = {
+        ten_thuoc: values.ten_thuoc,
+        cong_dung: values.cong_dung || null,
+      };
+
       if (id) {
-        await api.put(`/medicines/${id}`, formData);
-        alert("✅ Cập nhật thuốc thành công!");
+        await api.put(`/medicines/${id}`, payload);
+        message.success("Cập nhật thuốc thành công!");
       } else {
-        await api.post("/medicines", formData);
-        alert("✅ Thêm thuốc thành công!");
+        await api.post("/medicines", payload);
+        message.success("Thêm thuốc mới thành công!");
       }
       navigate("/medicines");
-    } catch (err) {
-      console.error("❌ Lỗi khi lưu thuốc:", err);
-      alert("Không thể lưu dữ liệu!");
+    } catch (error) {
+      console.error("onFinish error:", error);
+      const serverMsg =
+        error?.response?.data?.message || "Lỗi khi lưu dữ liệu!";
+      message.error(serverMsg);
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>{id ? "✏️ Chỉnh sửa thuốc" : "➕ Thêm thuốc mới"}</h2>
+    <div className="inject-form-container">
+      <div className="inject-form-box">
+        <h2 className="form-title">
+          {id ? "✏️ Chỉnh sửa thuốc" : "➕ Thêm thuốc mới"}
+        </h2>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Tên thuốc:</label>
-          <input
-            type="text"
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="inject-form"
+        >
+          {/* 💊 Tên thuốc */}
+          <Form.Item
             name="ten_thuoc"
-            value={formData.ten_thuoc}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Công dụng:</label>
-          <textarea
-            name="cong_dung"
-            value={formData.cong_dung}
-            onChange={handleChange}
-            placeholder="Nhập công dụng của thuốc"
-          />
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" className="btn-submit">
-            💾 Lưu
-          </button>
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={() => navigate("/medicines")}
+            label="Tên thuốc"
+            rules={[{ required: true, message: "Vui lòng nhập tên thuốc!" }]}
           >
-            ❌ Hủy
-          </button>
-        </div>
-      </form>
+            <Input placeholder="Nhập tên thuốc..." />
+          </Form.Item>
+
+          {/* 📝 Công dụng */}
+          <Form.Item
+            name="cong_dung"
+            label="Công dụng"
+          >
+            <Input.TextArea rows={3} placeholder="Nhập công dụng của thuốc..." />
+          </Form.Item>
+
+          {/* 🧭 Nút hành động */}
+          <div className="form-buttons">
+            <Button type="primary" htmlType="submit">
+              {id ? "Cập nhật" : "Thêm mới"}
+            </Button>
+            <Button
+              onClick={() => navigate("/medicines")}
+              style={{ marginLeft: 10 }}
+            >
+              Hủy
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 };

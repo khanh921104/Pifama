@@ -72,7 +72,7 @@ const AreaList = () => {
         <Button
           type="primary"
           onClick={() => navigate("/areas/add")}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm khu trại
         </Button>

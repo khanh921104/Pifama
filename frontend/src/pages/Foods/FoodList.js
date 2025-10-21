@@ -82,7 +82,7 @@ const FoodList = () => {
         <Button
           type="primary"
           onClick={handleAdd}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm thức ăn
         </Button>

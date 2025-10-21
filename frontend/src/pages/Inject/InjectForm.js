@@ -94,98 +94,104 @@ const VaccinationForm = () => {
   };
 
   return (
-    <div className="p-4">
-      <h2>{id ? "✏️ Sửa bản ghi tiêm thuốc" : "➕ Thêm bản ghi tiêm thuốc"}</h2>
+    <div className="inject-form-container">
+      <div className="inject-form-box">
+        <h2 className="form-title">
+          {id ? "✏️ Sửa bản ghi tiêm thuốc" : "➕ Thêm bản ghi tiêm thuốc"}
+        </h2>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        style={{ maxWidth: 600 }}
-      >
-        {/* 🐖 Heo */}
-        <Form.Item
-          name="ma_heo"
-          label="Heo"
-          rules={[{ required: true, message: "Vui lòng chọn heo!" }]}
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="inject-form"
         >
-          <Select placeholder="Chọn heo">
-            {pigs.map((p) => (
-              <Select.Option key={p.id} value={p.id}>
-                {p.id} - {p.suc_khoe || p.TrangThai}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
+          {/* 🐖 Heo */}
+          <Form.Item
+            name="ma_heo"
+            label="Heo"
+            rules={[{ required: true, message: "Vui lòng chọn heo!" }]}
+          >
+            <Select placeholder="Chọn heo">
+              {pigs.map((p) => (
+                <Select.Option key={p.id} value={p.id}>
+                  {p.id} - {p.suc_khoe || p.TrangThai}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        {/* 💊 Thuốc */}
-        <Form.Item
-          name="ma_thuoc"
-          label="Thuốc"
-          rules={[{ required: true, message: "Vui lòng chọn thuốc!" }]}
-        >
-          <Select placeholder="Chọn thuốc">
-            {medicines.map((t) => (
-              <Select.Option key={t.id} value={t.id}>
-                {t.ten_thuoc}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
+          {/* 💊 Thuốc */}
+          <Form.Item
+            name="ma_thuoc"
+            label="Thuốc"
+            rules={[{ required: true, message: "Vui lòng chọn thuốc!" }]}
+          >
+            <Select placeholder="Chọn thuốc">
+              {medicines.map((t) => (
+                <Select.Option key={t.id} value={t.id}>
+                  {t.ten_thuoc}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        {/* 👨‍🔬 Nhân viên */}
-        <Form.Item
-          name="ma_nv"
-          label="Nhân viên kỹ thuật"
-          rules={[{ required: true, message: "Vui lòng chọn nhân viên!" }]}
-        >
-          <Select placeholder="Chọn nhân viên">
-            {employees.map((e) => (
-              <Select.Option key={e.id} value={e.id}>
-                {e.ten_nv}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
+          {/* 👨‍🔬 Nhân viên */}
+          <Form.Item
+            name="ma_nv"
+            label="Nhân viên kỹ thuật"
+            rules={[{ required: true, message: "Vui lòng chọn nhân viên!" }]}
+          >
+            <Select placeholder="Chọn nhân viên">
+              {employees.map((e) => (
+                <Select.Option key={e.id} value={e.id}>
+                  {e.ten_nv}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        {/* 📅 Ngày tiêm */}
-        <Form.Item
-          name="ngay_tiem"
-          label="Ngày tiêm"
-          rules={[{ required: true, message: "Vui lòng chọn ngày tiêm!" }]}
-        >
-          <DatePicker
-            style={{ width: "100%" }}
-            placeholder="Chọn ngày tiêm"
-            format="YYYY-MM-DD"
-          />
-        </Form.Item>
+          {/* 📅 Ngày tiêm */}
+          <Form.Item
+            name="ngay_tiem"
+            label="Ngày tiêm"
+            rules={[{ required: true, message: "Vui lòng chọn ngày tiêm!" }]}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              placeholder="Chọn ngày tiêm"
+              format="YYYY-MM-DD"
+            />
+          </Form.Item>
 
-        {/* ⚗️ Liều lượng */}
-        <Form.Item
-          name="lieu_luong"
-          label="Liều lượng"
-          rules={[{ required: true, message: "Nhập liều lượng!" }]}
-        >
-          <Input placeholder="Nhập liều lượng..." />
-        </Form.Item>
+          {/* ⚗️ Liều lượng */}
+          <Form.Item
+            name="lieu_luong"
+            label="Liều lượng"
+            rules={[{ required: true, message: "Nhập liều lượng!" }]}
+          >
+            <Input placeholder="Nhập liều lượng..." />
+          </Form.Item>
 
-        {/* 📝 Ghi chú */}
-        <Form.Item name="ghi_chu" label="Ghi chú">
-          <Input.TextArea rows={3} placeholder="Ghi chú (nếu có)..." />
-        </Form.Item>
+          {/* 📝 Ghi chú */}
+          <Form.Item name="ghi_chu" label="Ghi chú">
+            <Input.TextArea rows={3} placeholder="Ghi chú (nếu có)..." />
+          </Form.Item>
 
-        {/* 🧭 Nút hành động */}
-        <Button type="primary" htmlType="submit">
-          {id ? "Cập nhật" : "Thêm mới"}
-        </Button>
-        <Button
-          onClick={() => navigate("/inject-medicines")}
-          style={{ marginLeft: 10 }}
-        >
-          Hủy
-        </Button>
-      </Form>
+          {/* 🧭 Nút hành động */}
+          <div className="form-buttons">
+            <Button type="primary" htmlType="submit">
+              {id ? "Cập nhật" : "Thêm mới"}
+            </Button>
+            <Button
+              onClick={() => navigate("/inject-medicines")}
+              style={{ marginLeft: 10 }}
+            >
+              Hủy
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 };

@@ -1,111 +1,41 @@
-/* ------------------------------
-   🌾 Cấu trúc CSS cho toàn trang
---------------------------------*/
-
-.container {
+/* injectForm.css */
+.inject-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 100px);
+  background-color: #f9f9f9;
   padding: 20px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
 }
 
-/* 🌿 Tiêu đề trang */
-.container h2 {
-  text-align: left;
-  color: #2c3e50;
-  margin-bottom: 15px;
-}
-
-/* 🐷 Nút thêm heo mới */
-.add-button {
-  margin-bottom: 15px;
-  padding: 8px 12px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.add-button:hover {
-  background-color: #43a047;
-}
-
-/* 📋 Bảng dữ liệu */
-table {
+.inject-form-box {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  overflow: hidden;
+  max-width: 600px;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 10px;
+.form-title {
   text-align: center;
-}
-
-th {
-  background-color: #f4f4f4;
+  margin-bottom: 25px;
   color: #333;
-  font-weight: 600;
 }
 
-tr:nth-child(even) {
-  background-color: #fafafa;
+.inject-form {
+  width: 100%;
 }
 
-tr:hover {
-  background-color: #f1f8e9;
+.form-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
-/* ✏️ Nút sửa */
-.edit-button {
-  padding: 5px 10px;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.edit-button:hover {
-  background-color: #1976d2;
-}
-
-/* --- BUTTON STYLES --- */
-button {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  margin: 4px;
-  cursor: pointer;
-  font-size: 15px;
-  transition: all 0.2s ease-in-out;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-/* --- Các nút phụ: Sửa / Xóa có màu riêng --- */
-button.edit {
-  background-color: #2196f3;
-}
-
-button.edit:hover {
-  background-color: #0b7dda;
-}
-
-button.delete {
-  background-color: #f44336;
-}
-
-button.delete:hover {
-  background-color: #da190b;
+/* Responsive: thu gọn padding khi màn nhỏ */
+@media (max-width: 768px) {
+  .inject-form-box {
+    padding: 20px;
+  }
 }

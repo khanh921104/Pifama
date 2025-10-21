@@ -82,7 +82,7 @@ const ThuocList = () => {
         <Button
           type="primary"
           onClick={handleAdd}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm thuốc
         </Button>

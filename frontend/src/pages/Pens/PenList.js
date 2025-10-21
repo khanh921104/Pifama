@@ -114,7 +114,7 @@ const PenList = () => {
         <Button
           type="primary"
           onClick={() => navigate("/pens/add")}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm chuồng mới
         </Button>

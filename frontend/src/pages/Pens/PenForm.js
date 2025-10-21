@@ -1,116 +1,151 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useCallback, useState } from "react";
+import { Form, Input, Select, Button, message } from "antd";
 import api from "../../api/axiosConfig";
+import { useNavigate, useParams } from "react-router-dom";
+import "../../styles/form.css";
 
 const PenForm = () => {
+  const [form] = Form.useForm();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    ma_khu: "",
-    ten_chuong: "",
-    suc_chua: "",
-    trang_thai: "",
-  });
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🟢 Lấy danh sách khu trại để chọn (dropdown)
-  useEffect(() => {
-    api
-      .get("/areas")
-      .then((res) => setAreas(res.data))
-      .catch((err) => console.error("Lỗi khi tải khu trại:", err));
+  // 🟢 Lấy danh sách khu trại
+  const fetchAreas = useCallback(async () => {
+    try {
+      const res = await api.get("/areas");
+      setAreas(res.data || []);
+    } catch (error) {
+      console.error("fetchAreas error:", error);
+      message.error("Lỗi khi tải danh sách khu trại!");
+    }
   }, []);
 
-  // 🟢 Nếu có id thì load thông tin chuồng để sửa
-  useEffect(() => {
-    if (id) {
+  // 🟢 Lấy dữ liệu chuồng nếu đang sửa
+  const fetchPen = useCallback(async () => {
+    if (!id) return;
+    try {
       setLoading(true);
-      api
-        .get(`/pens/${id}`)
-        .then((res) => setFormData(res.data))
-        .catch((err) => console.error("Lỗi khi tải chuồng:", err))
-        .finally(() => setLoading(false));
+      const res = await api.get(`/pens/${id}`);
+      if (res.data) {
+        form.setFieldsValue({
+          ma_khu: res.data.ma_khu,
+          ten_chuong: res.data.ten_chuong,
+          suc_chua: res.data.suc_chua,
+          trang_thai: res.data.trang_thai,
+        });
+      }
+    } catch (error) {
+      console.error("fetchPen error:", error);
+      message.error("Lỗi khi tải dữ liệu chuồng cần sửa!");
+    } finally {
+      setLoading(false);
     }
-  }, [id]);
+  }, [id, form]);
 
-  // 🟢 Xử lý thay đổi input
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    fetchAreas();
+    fetchPen();
+  }, [fetchAreas, fetchPen]);
 
   // 🟢 Xử lý submit form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onFinish = async (values) => {
     try {
+      const payload = {
+        ma_khu: parseInt(values.ma_khu),
+        ten_chuong: values.ten_chuong.trim(),
+        suc_chua: parseInt(values.suc_chua),
+        trang_thai: values.trang_thai.trim(),
+      };
+
       if (id) {
-        await api.put(`/pens/${id}`, formData);
-        alert("✅ Cập nhật chuồng thành công!");
+        await api.put(`/pens/${id}`, payload);
+        message.success("Cập nhật chuồng thành công!");
       } else {
-        await api.post("/pens", formData);
-        alert("✅ Thêm chuồng mới thành công!");
+        await api.post("/pens", payload);
+        message.success("Thêm chuồng mới thành công!");
       }
       navigate("/pens");
-    } catch (err) {
-      console.error("❌ Lỗi khi lưu chuồng:", err);
-      alert("Lỗi khi lưu dữ liệu chuồng!");
+    } catch (error) {
+      console.error("onFinish error:", error);
+      const serverMsg =
+        error?.response?.data?.message || "Lỗi khi lưu dữ liệu chuồng!";
+      message.error(serverMsg);
     }
   };
 
   if (loading) return <p>Đang tải...</p>;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>{id ? "Cập nhật chuồng" : "Thêm chuồng mới"}</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Khu trại:</label>
-          <select name="ma_khu" value={formData.ma_khu} onChange={handleChange} required>
-            <option value="">-- Chọn khu trại --</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.ten_khu}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="inject-form-container">
+      <div className="inject-form-box">
+        <h2 className="form-title">
+          {id ? "✏️ Cập nhật chuồng" : "➕ Thêm chuồng mới"}
+        </h2>
 
-        <div>
-          <label>Tên chuồng:</label>
-          <input
-            type="text"
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="inject-form"
+        >
+          {/* 🏞️ Khu trại */}
+          <Form.Item
+            name="ma_khu"
+            label="Khu trại"
+            rules={[{ required: true, message: "Vui lòng chọn khu trại!" }]}
+          >
+            <Select placeholder="Chọn khu trại">
+              {areas.map((a) => (
+                <Select.Option key={a.id} value={a.id}>
+                  {a.ten_khu}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {/* 🏠 Tên chuồng */}
+          <Form.Item
             name="ten_chuong"
-            value={formData.ten_chuong}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            label="Tên chuồng"
+            rules={[{ required: true, message: "Vui lòng nhập tên chuồng!" }]}
+          >
+            <Input placeholder="Nhập tên chuồng..." />
+          </Form.Item>
 
-        <div>
-          <label>Sức chứa:</label>
-          <input
-            type="number"
+          {/* 📏 Sức chứa */}
+          <Form.Item
             name="suc_chua"
-            value={formData.suc_chua}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            label="Sức chứa"
+            rules={[{ required: true, message: "Vui lòng nhập sức chứa!" }]}
+          >
+            <Input type="number" placeholder="Nhập sức chứa..." />
+          </Form.Item>
 
-        <div>
-          <label>Trạng thái:</label>
-          <input
-            type="text"
+          {/* 📊 Trạng thái */}
+          <Form.Item
             name="trang_thai"
-            value={formData.trang_thai}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            label="Trạng thái"
+            rules={[{ required: true, message: "Vui lòng nhập trạng thái!" }]}
+          >
+            <Input placeholder="Nhập trạng thái..." />
+          </Form.Item>
 
-        <button type="submit">{id ? "Cập nhật" : "Thêm mới"}</button>
-      </form>
+          {/* 🧭 Nút hành động */}
+          <div className="form-buttons">
+            <Button type="primary" htmlType="submit">
+              {id ? "Cập nhật" : "Thêm mới"}
+            </Button>
+            <Button
+              onClick={() => navigate("/pens")}
+              style={{ marginLeft: 10 }}
+            >
+              Hủy
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 };

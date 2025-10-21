@@ -81,7 +81,7 @@ const StaffList = () => {
         <Button
           type="primary"
           onClick={() => navigate("/staffs/add")}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm nhân viên
         </Button>

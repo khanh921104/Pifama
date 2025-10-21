@@ -90,7 +90,7 @@ const PigList = () => {
   return (
     <div style={{ padding: 24 }}>
       <Space
-        style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}
+        style={{ display: "flex", justifyContent: "space-between", margin: 20 }}
       >
         <Title level={3}>🐷 Danh sách heo</Title>
         <Button

@@ -77,7 +77,7 @@ const AssignmentList = () => {
         <Button
           type="primary"
           onClick={() => navigate("/assignments/add")}
-          style={{ marginBottom: 10 }}
+          style={{ margin: 10 }}
         >
           ➕ Thêm phân công
         </Button>

@@ -1,185 +1,171 @@
-import React, { useState, useEffect } from "react";
-import axios from "../../api/axiosConfig";
+import React, { useEffect, useCallback, useState } from "react";
+import { Form, Input, Select, DatePicker, Button, message } from "antd";
+import api from "../../api/axiosConfig";
 import { useNavigate, useParams } from "react-router-dom";
+import dayjs from "dayjs";
+import "../../styles/form.css";
 
 const PigForm = () => {
+  const [form] = Form.useForm();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { id } = useParams(); // Nếu có id → đang sửa, nếu không → thêm mới
-
-  const [formData, setFormData] = useState({
-    ma_chuong: "",
-    ma_giong: "",
-    ngay_nhap: "",
-    can_nang: "",
-    suc_khoe: "",
-  });
-
   const [chuongs, setChuongs] = useState([]);
   const [giongs, setGiongs] = useState([]);
 
-  // 🧩 Tải danh sách chuồng & giống
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [chuongRes, giongRes] = await Promise.all([
-          axios.get("/pens"),
-          axios.get("/breeds"),
-        ]);
-        setChuongs(chuongRes.data);
-        setGiongs(giongRes.data);
-      } catch (err) {
-        console.error("Lỗi khi tải dữ liệu chuồng và giống:", err);
-      }
-    };
-    fetchData();
+  // 🟢 Tải danh sách chuồng & giống
+  const fetchData = useCallback(async () => {
+    try {
+      const [chuongRes, giongRes] = await Promise.all([
+        api.get("/pens"),
+        api.get("/breeds"),
+      ]);
+      setChuongs(chuongRes.data || []);
+      setGiongs(giongRes.data || []);
+    } catch (error) {
+      console.error("fetchData error:", error);
+      message.error("Lỗi khi tải dữ liệu chuồng và giống!");
+    }
   }, []);
 
-  // 🧩 Nếu đang sửa, tải thông tin heo cần chỉnh
-  useEffect(() => {
-    if (id) {
-      axios
-        .get(`/pigs/${id}`)
-        .then((res) => {
-          const data = res.data;
-          // Format ngày nhập cho input date
-          const ngayNhap = data.ngay_nhap
-            ? new Date(data.ngay_nhap).toISOString().split("T")[0]
-            : "";
-          setFormData({
-            ma_chuong: data.ma_chuong,
-            ma_giong: data.ma_giong,
-            ngay_nhap: ngayNhap,
-            can_nang: data.can_nang,
-            suc_khoe: data.suc_khoe,
-          });
-        })
-        .catch((err) => console.error("Lỗi khi lấy dữ liệu heo:", err));
-    }
-  }, [id]);
-
-  // 🧩 Cập nhật state khi thay đổi input
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // 🧩 Gửi form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Chuẩn hóa dữ liệu gửi đi
-    const dataToSend = {
-      ma_chuong: parseInt(formData.ma_chuong),
-      ma_giong: parseInt(formData.ma_giong),
-      ngay_nhap: formData.ngay_nhap,
-      can_nang: parseFloat(formData.can_nang),
-      suc_khoe: formData.suc_khoe.trim(),
-    };
-
-    console.log("📤 Dữ liệu gửi lên:", dataToSend);
-
+  // 🟢 Lấy dữ liệu heo nếu đang sửa
+  const fetchPig = useCallback(async () => {
+    if (!id) return;
     try {
-      if (id) {
-        // Cập nhật
-        await axios.put(`/pigs/${id}`, dataToSend);
-        alert("✅ Cập nhật heo thành công!");
-      } else {
-        // Thêm mới
-        await axios.post("/pigs", dataToSend);
-        alert("✅ Thêm heo mới thành công!");
+      const res = await api.get(`/pigs/${id}`);
+      if (res.data) {
+        form.setFieldsValue({
+          ma_chuong: res.data.ma_chuong,
+          ma_giong: res.data.ma_giong,
+          ngay_nhap: res.data.ngay_nhap ? dayjs(res.data.ngay_nhap) : null,
+          can_nang: res.data.can_nang,
+          suc_khoe: res.data.suc_khoe,
+        });
       }
+    } catch (error) {
+      console.error("fetchPig error:", error);
+      message.error("Lỗi khi tải dữ liệu heo cần sửa!");
+    }
+  }, [id, form]);
 
+  useEffect(() => {
+    fetchData();
+    fetchPig();
+  }, [fetchData, fetchPig]);
+
+  // 🟢 Xử lý submit form
+  const onFinish = async (values) => {
+    try {
+      const payload = {
+        ma_chuong: parseInt(values.ma_chuong),
+        ma_giong: parseInt(values.ma_giong),
+        ngay_nhap: values.ngay_nhap ? dayjs(values.ngay_nhap).format("YYYY-MM-DD") : null,
+        can_nang: parseFloat(values.can_nang),
+        suc_khoe: values.suc_khoe ? values.suc_khoe.trim() : null,
+      };
+
+      if (id) {
+        await api.put(`/pigs/${id}`, payload);
+        message.success("Cập nhật heo thành công!");
+      } else {
+        await api.post("/pigs", payload);
+        message.success("Thêm heo mới thành công!");
+      }
       navigate("/pigs");
-    } catch (err) {
-      console.error("❌ Lỗi khi lưu heo:", err);
-      alert("Đã xảy ra lỗi khi lưu dữ liệu.");
+    } catch (error) {
+      console.error("onFinish error:", error);
+      const serverMsg =
+        error?.response?.data?.message || "Lỗi khi lưu dữ liệu heo!";
+      message.error(serverMsg);
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>{id ? "Cập nhật heo" : "Thêm heo mới"}</h2>
+    <div className="inject-form-container">
+      <div className="inject-form-box">
+        <h2 className="form-title">
+          {id ? "✏️ Cập nhật heo" : "➕ Thêm heo mới"}
+        </h2>
 
-      <form onSubmit={handleSubmit} className="form">
-        <div className="form-group">
-          <label>Chuồng:</label>
-          <select
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="inject-form"
+        >
+          {/* 🏠 Chuồng */}
+          <Form.Item
             name="ma_chuong"
-            value={formData.ma_chuong}
-            onChange={handleChange}
-            required
+            label="Chuồng"
+            rules={[{ required: true, message: "Vui lòng chọn chuồng!" }]}
           >
-            <option value="">-- Chọn chuồng --</option>
-            {chuongs.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.ten_chuong}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Select placeholder="Chọn chuồng">
+              {chuongs.map((c) => (
+                <Select.Option key={c.id} value={c.id}>
+                  {c.ten_chuong}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        <div className="form-group">
-          <label>Giống heo:</label>
-          <select
+          {/* 🐖 Giống heo */}
+          <Form.Item
             name="ma_giong"
-            value={formData.ma_giong}
-            onChange={handleChange}
-            required
+            label="Giống heo"
+            rules={[{ required: true, message: "Vui lòng chọn giống heo!" }]}
           >
-            <option value="">-- Chọn giống heo --</option>
-            {giongs.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.ten_giong}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Select placeholder="Chọn giống heo">
+              {giongs.map((g) => (
+                <Select.Option key={g.id} value={g.id}>
+                  {g.ten_giong}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        <div className="form-group">
-          <label>Ngày nhập:</label>
-          <input
-            type="date"
+          {/* 📅 Ngày nhập */}
+          <Form.Item
             name="ngay_nhap"
-            value={formData.ngay_nhap || ""}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Cân nặng (kg):</label>
-          <input
-            type="number"
-            name="can_nang"
-            value={formData.can_nang}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Tình trạng sức khỏe:</label>
-          <input
-            type="text"
-            name="suc_khoe"
-            value={formData.suc_khoe}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" className="btn-submit">
-            {id ? "💾 Cập nhật" : "➕ Thêm mới"}
-          </button>
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={() => navigate("/pigs")}
+            label="Ngày nhập"
+            rules={[{ required: true, message: "Vui lòng chọn ngày nhập!" }]}
           >
-            ❌ Hủy
-          </button>
-        </div>
-      </form>
+            <DatePicker
+              style={{ width: "100%" }}
+              placeholder="Chọn ngày nhập"
+              format="YYYY-MM-DD"
+            />
+          </Form.Item>
+
+          {/* ⚖️ Cân nặng */}
+          <Form.Item
+            name="can_nang"
+            label="Cân nặng (kg)"
+            rules={[{ required: true, message: "Vui lòng nhập cân nặng!" }]}
+          >
+            <Input type="number" placeholder="Nhập cân nặng..." />
+          </Form.Item>
+
+          {/* 🩺 Tình trạng sức khỏe */}
+          <Form.Item
+            name="suc_khoe"
+            label="Tình trạng sức khỏe"
+          >
+            <Input placeholder="Nhập tình trạng sức khỏe..." />
+          </Form.Item>
+
+          {/* 🧭 Nút hành động */}
+          <div className="form-buttons">
+            <Button type="primary" htmlType="submit">
+              {id ? "Cập nhật" : "Thêm mới"}
+            </Button>
+            <Button
+              onClick={() => navigate("/pigs")}
+              style={{ marginLeft: 10 }}
+            >
+              Hủy
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 };

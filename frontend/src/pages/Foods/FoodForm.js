@@ -1,68 +1,103 @@
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useCallback } from "react";
+import { Form, Input, Button, message } from "antd";
 import api from "../../api/axiosConfig";
-import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import "../../styles/form.css";
 
 const FoodForm = () => {
+  const [form] = Form.useForm();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    ten_thuc_an: "",
-    ghi_chu: "",
-  });
+
+  // 🟢 Lấy dữ liệu thức ăn nếu đang sửa
+  const fetchFood = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await api.get(`/foods/${id}`);
+      if (res.data) {
+        form.setFieldsValue({
+          ten_thuc_an: res.data.ten_thuc_an,
+          ghi_chu: res.data.ghi_chu,
+        });
+      }
+    } catch (error) {
+      console.error("fetchFood error:", error);
+      message.error("Lỗi khi tải dữ liệu thức ăn cần sửa!");
+    }
+  }, [id, form]);
 
   useEffect(() => {
-    if (id) {
-      // 🟢 Nếu có id => đang sửa, tự load dữ liệu thức ăn
-      api.get(`/foods/${id}`)
-        .then((res) => setFormData(res.data))
-        .catch(() => alert("Không thể tải dữ liệu thức ăn cần sửa!"));
-    }
-  }, [id]);
+    fetchFood();
+  }, [fetchFood]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // 🧩 Xử lý khi submit form
+  const onFinish = async (values) => {
     try {
+      const payload = {
+        ten_thuc_an: values.ten_thuc_an,
+        ghi_chu: values.ghi_chu || null,
+      };
+
       if (id) {
-        await api.put(`/foods/${id}`, formData);
-        alert("✅ Cập nhật thức ăn thành công!");
+        await api.put(`/foods/${id}`, payload);
+        message.success("Cập nhật thức ăn thành công!");
       } else {
-        await api.post("/foods", formData);
-        alert("✅ Thêm thức ăn thành công!");
+        await api.post("/foods", payload);
+        message.success("Thêm thức ăn mới thành công!");
       }
       navigate("/foods");
-    } catch (err) {
-      console.error("❌ Lỗi khi lưu thức ăn:", err);
-      alert("Không thể lưu dữ liệu!");
+    } catch (error) {
+      console.error("onFinish error:", error);
+      const serverMsg =
+        error?.response?.data?.message || "Lỗi khi lưu dữ liệu!";
+      message.error(serverMsg);
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>{id ? "✏️ Chỉnh sửa thức ăn" : "➕ Thêm thức ăn mới"}</h2>
+    <div className="inject-form-container">
+      <div className="inject-form-box">
+        <h2 className="form-title">
+          {id ? "✏️ Chỉnh sửa thức ăn" : "➕ Thêm thức ăn mới"}
+        </h2>
 
-      <form onSubmit={handleSubmit}>
-        <label>Tên thức ăn:</label>
-        <input
-          type="text"
-          value={formData.ten_thuc_an}
-          onChange={(e) =>
-            setFormData({ ...formData, ten_thuc_an: e.target.value })
-          }
-          required
-        />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="inject-form"
+        >
+          {/* 🍽️ Tên thức ăn */}
+          <Form.Item
+            name="ten_thuc_an"
+            label="Tên thức ăn"
+            rules={[{ required: true, message: "Vui lòng nhập tên thức ăn!" }]}
+          >
+            <Input placeholder="Nhập tên thức ăn..." />
+          </Form.Item>
 
-        <label>Ghi chú:</label>
-        <textarea
-          value={formData.ghi_chu}
-          onChange={(e) =>
-            setFormData({ ...formData, ghi_chu: e.target.value })
-          }
-        />
+          {/* 📝 Ghi chú */}
+          <Form.Item
+            name="ghi_chu"
+            label="Ghi chú"
+          >
+            <Input.TextArea rows={3} placeholder="Nhập ghi chú (nếu có)..." />
+          </Form.Item>
 
-        <button type="submit" className="save-button">
-          💾 Lưu
-        </button>
-      </form>
+          {/* 🧭 Nút hành động */}
+          <div className="form-buttons">
+            <Button type="primary" htmlType="submit">
+              {id ? "Cập nhật" : "Thêm mới"}
+            </Button>
+            <Button
+              onClick={() => navigate("/foods")}
+              style={{ marginLeft: 10 }}
+            >
+              Hủy
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 };
