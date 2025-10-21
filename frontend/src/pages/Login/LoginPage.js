@@ -1,55 +1,43 @@
 import React, { useState } from "react";
+import { Form, Input, Button, message } from "antd";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axiosConfig";
-import "./login.css";
 
 const Login = () => {
-  const [formData, setFormData] = useState({ username: "", password: "" });
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
+  const onFinish = async (values) => {
+    setLoading(true);
     try {
-      const res = await api.post("/auth/login", formData);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/dashboard"); // sau khi login chuyển đến trang quản lý heo
+      const res = await axios.post("http://localhost:5000/api/auth/login", values);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        message.success("Đăng nhập thành công!");
+        navigate("/account");
+      } else {
+        message.error("Không nhận được token từ server!");
+      }
     } catch (err) {
-      console.error(err);
-      setError("Tên đăng nhập hoặc mật khẩu không đúng");
+      console.error("Lỗi đăng nhập:", err);
+      message.error(err.response?.data?.message || "Đăng nhập thất bại!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      <h2>Đăng nhập hệ thống trại chăn nuôi</h2>
-      <form onSubmit={handleSubmit} className="login-form">
-        <input
-          type="text"
-          name="username"
-          placeholder="Tên đăng nhập"
-          value={formData.username}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Mật khẩu"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        {error && <p className="error">{error}</p>}
-        <button type="submit">Đăng nhập</button>
-      </form>
-    </div>
+    <Form name="login" onFinish={onFinish} style={{ maxWidth: 400, margin: "auto", marginTop: 80 }}>
+      <Form.Item name="ten_dang_nhap" rules={[{ required: true, message: "Nhập tên đăng nhập!" }]}>
+        <Input placeholder="Tên đăng nhập" />
+      </Form.Item>
+      <Form.Item name="mat_khau" rules={[{ required: true, message: "Nhập mật khẩu!" }]}>
+        <Input.Password placeholder="Mật khẩu" />
+      </Form.Item>
+      <Button type="primary" htmlType="submit" loading={loading} block>
+        Đăng nhập
+      </Button>
+    </Form>
   );
 };
 

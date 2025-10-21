@@ -22,13 +22,15 @@ import InjectsForm from "./pages/Inject/InjectForm";
 
 
 import Header from "./pages/header";
+import Account from "./pages/Login/Account";
 
 const App = () => {
   return (
     <Router>
       <Header />
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/account" element={<Account />} />
 
         {/* <Route path="/" element={<Dashboard />} /> */}
         <Route path="/dashboard" element={<Dashboard />} />

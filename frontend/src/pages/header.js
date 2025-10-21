@@ -9,7 +9,7 @@ const Header = () => {
       <h2><Link to="/dashboard" className="home">🐷 Quản lý trang trại</Link></h2>
       <nav className="nav">
         
-        <Link to="/staffs">Nhân viên</Link>
+        <Link to="/account">Tài khoản</Link>
       </nav>
     </header>
   );

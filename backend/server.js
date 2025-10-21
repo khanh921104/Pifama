@@ -11,7 +11,7 @@ app.use(express.json());
 // Kết nối database
 connectDB();
 
-app.use("/api/auth", require("./routes/auth"));
+app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/pigs", require("./routes/pigRoutes"));
 app.use("/api/pens", require("./routes/penRoutes"));
 app.use("/api/areas", require("./routes/areaRoutes"));
