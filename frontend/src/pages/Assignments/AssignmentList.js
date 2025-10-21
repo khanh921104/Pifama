@@ -1,33 +1,35 @@
 // 📁 src/pages/Assignments/AssignmentList.js
 import React, { useEffect, useState } from "react";
+import { Button, Table, Space, Popconfirm, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
+import "../../styles/table.css";
 
 const AssignmentList = () => {
   const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 🔹 Lấy danh sách phân công
+  // 🟢 Lấy danh sách phân công
   const fetchAssignments = async () => {
+    setLoading(true);
     try {
       const res = await api.get("/assignments");
       setAssignments(res.data);
     } catch (err) {
-      console.error("Lỗi khi tải danh sách:", err);
-      alert("Không thể tải danh sách phân công!");
+      message.error("Lỗi khi tải danh sách phân công!");
     }
+    setLoading(false);
   };
 
-  // 🔹 Xóa phân công
-  const deleteAssignment = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa phân công này?")) return;
+  // 🗑️ Xóa phân công
+  const handleDelete = async (id) => {
     try {
       await api.delete(`/assignments/${id}`);
-      setAssignments(assignments.filter((a) => a.id !== id));
-      alert("Xóa thành công!");
+      message.success("Xóa phân công thành công!");
+      fetchAssignments();
     } catch (err) {
-      console.error("Lỗi khi xóa:", err);
-      alert("Không thể xóa phân công!");
+      message.error("Không thể xóa phân công!");
     }
   };
 
@@ -35,63 +37,59 @@ const AssignmentList = () => {
     fetchAssignments();
   }, []);
 
+  // 📋 Cột hiển thị
+  const columns = [
+    // { title: "#", dataIndex: "index", key: "index", render: (_, __, i) => i + 1 },
+    { title: "Nhân viên", dataIndex: "ten_nv", key: "ten_nv" },
+    { title: "Chuồng", dataIndex: "ten_chuong", key: "ten_chuong" },
+    { title: "Thức ăn", dataIndex: "ten_thuc_an", key: "ten_thuc_an" },
+    {
+      title: "Ngày",
+      dataIndex: "ngay",
+      key: "ngay",
+      render: (ngay) => new Date(ngay).toLocaleDateString("vi-VN"),
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record) => (
+        <Space>
+          <Button onClick={() => navigate(`/assignments/edit/${record.id}`)}>
+            ✏️ Sửa
+          </Button>
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa phân công này không?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button danger>🗑️ Xóa</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">📋 Danh sách phân công cho ăn</h2>
-      <button
-        onClick={() => navigate("/assignments/add")}
-        className="bg-green-600 text-white px-3 py-1 rounded mb-3"
-      >
-        ➕ Thêm phân công
-      </button>
+      <div className="title">
+        <h2>📋 Danh sách phân công cho ăn</h2>
+        <Button
+          type="primary"
+          onClick={() => navigate("/assignments/add")}
+          style={{ marginBottom: 10 }}
+        >
+          ➕ Thêm phân công
+        </Button>
+      </div>
 
-      <table className="w-full border border-gray-300 text-left">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="p-2 border">#</th>
-            <th className="p-2 border">Nhân viên</th>
-            <th className="p-2 border">Chuồng</th>
-            <th className="p-2 border">Thức ăn</th>
-            <th className="p-2 border">Ngày</th>
-            <th className="p-2 border">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {assignments.length > 0 ? (
-            assignments.map((a, index) => (
-              <tr key={a.id} className="hover:bg-gray-50">
-                <td className="p-2 border">{index + 1}</td>
-                <td className="p-2 border">{a.ten_nv}</td>
-                <td className="p-2 border">{a.ten_chuong}</td>
-                <td className="p-2 border">{a.ten_thuc_an}</td>
-                <td className="p-2 border">
-                  {new Date(a.ngay).toLocaleDateString("vi-VN")}
-                </td>
-                <td className="p-2 border">
-                  <button
-                    onClick={() => navigate(`/assignments/edit/${a.id}`)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded mr-2"
-                  >
-                    ✏️ Sửa
-                  </button>
-                  <button
-                    onClick={() => deleteAssignment(a.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    🗑 Xóa
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td className="p-3 text-center" colSpan="6">
-                Không có dữ liệu
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Table
+        columns={columns}
+        dataSource={assignments}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 8 }}
+      />
     </div>
   );
 };

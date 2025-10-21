@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import api from "../../api/axiosConfig";
 import { Button, Table, Space, Popconfirm, message } from "antd";
 import { useNavigate } from "react-router-dom";
+import "../../styles/table.css";
 
 const VaccinationList = () => {
   const [injects, setinjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 🟢 Lấy danh sách tiêm thuốc
   const fetchinjects = async () => {
     setLoading(true);
     try {
@@ -35,7 +37,7 @@ const VaccinationList = () => {
   };
 
   const columns = [
-    { title: "Mã", dataIndex: "id", key: "id" },
+    
     { title: "Mã Heo", dataIndex: "ma_heo", key: "ma_heo" },
     { title: "Tên thuốc", dataIndex: "ten_thuoc", key: "ten_thuoc" },
     { title: "Nhân viên", dataIndex: "ten_nv", key: "ten_nv" },
@@ -60,14 +62,17 @@ const VaccinationList = () => {
 
   return (
     <div className="p-4">
-      <h2>📋 Danh sách tiêm thuốc</h2>
-      <Button
-        type="primary"
-        onClick={() => navigate("/inject-medicines/add")}
-        style={{ marginBottom: 10 }}
-      >
-        ➕ Thêm bản ghi
-      </Button>
+      <div className="title">
+        <h2>📋 Danh sách tiêm thuốc</h2>
+        <Button
+          type="primary"
+          onClick={() => navigate("/inject-medicines/add")}
+          style={{ marginBottom: 10 }}
+        >
+          ➕ Thêm 
+        </Button>
+      </div>
+
       <Table
         columns={columns}
         dataSource={injects}

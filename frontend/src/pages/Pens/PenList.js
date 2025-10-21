@@ -1,102 +1,134 @@
 import React, { useEffect, useState } from "react";
+import { Button, Table, Space, Popconfirm, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import "../../styles/table.css";
-import "../../styles/form.css";
 
 const PenList = () => {
   const [pens, setPens] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 🟢 Lấy danh sách chuồng khi load trang
+  // 🟢 Lấy danh sách chuồng
+  const fetchPens = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/pens");
+      setPens(res.data);
+    } catch (error) {
+      message.error("❌ Lỗi khi tải danh sách chuồng!");
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     fetchPens();
   }, []);
 
-  const fetchPens = async () => {
-    try {
-      const res = await api.get("/pens");
-      setPens(res.data);
-    } catch (err) {
-      console.error("❌ Lỗi khi tải danh sách chuồng:", err);
-      alert("Không thể tải danh sách chuồng!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ➕ Thêm chuồng mới
-  const handleAdd = () => navigate("/pens/add");
-
-  // ✏️ Sửa chuồng
-  const handleEdit = (id) => navigate(`/pens/edit/${id}`);
-
   // 🗑️ Xóa chuồng
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa chuồng này không?")) return;
     try {
       await api.delete(`/pens/${id}`);
-      alert("✅ Xóa chuồng thành công!");
-      fetchPens(); // Tải lại danh sách
-    } catch (err) {
-      console.error("❌ Lỗi khi xóa chuồng:", err);
-      alert("Không thể xóa chuồng!");
+      message.success("✅ Xóa chuồng thành công!");
+      fetchPens();
+    } catch (error) {
+      message.error("❌ Lỗi khi xóa chuồng!");
     }
   };
 
-  if (loading) return <p>Đang tải dữ liệu...</p>;
+  // 🧱 Cột của bảng
+  const columns = [
+    { title: "ID", dataIndex: "id", key: "id", responsive: ["lg"] },
+    { title: "Mã khu", dataIndex: "ma_khu", key: "ma_khu", responsive: ["md"] },
+    { title: "Tên chuồng", dataIndex: "ten_chuong", key: "ten_chuong" },
+    {
+      title: "Sức chứa",
+      dataIndex: "suc_chua",
+      key: "suc_chua",
+      align: "center",
+      responsive: ["md"],
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "trang_thai",
+      key: "trang_thai",
+      render: (text) => (
+        <span
+          style={{
+            color: text === "Hoạt động" ? "green" : "gray",
+            fontWeight: 500,
+          }}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "Hành động",
+      key: "actions",
+      fixed: "right",
+      render: (_, record) => (
+        <Space>
+          <Button
+            onClick={() => navigate(`/pens/edit/${record.id}`)}
+            type="default"
+            size="small"
+          >
+            ✏️ Sửa
+          </Button>
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa chuồng này không?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button danger size="small">
+              🗑️ Xóa
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="container" style={{ padding: "20px" }}>
-      <h2>Danh sách chuồng</h2>
+    <div
+      className="p-4"
+      style={{
+        overflowX: "auto",
+        width: "100%",
+      }}
+    >
+      {/* 🔹 Tiêu đề và nút thêm */}
+      <div
+        className="title"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>📋 Danh sách chuồng</h2>
+        <Button
+          type="primary"
+          onClick={() => navigate("/pens/add")}
+          style={{ marginBottom: 10 }}
+        >
+          ➕ Thêm chuồng mới
+        </Button>
+      </div>
 
-      {/* Nút thêm chuồng mới */}
-      <button className="btn-add" onClick={handleAdd}>
-        ➕ Thêm chuồng mới
-      </button>
-
-      {pens.length === 0 ? (
-        <p>Chưa có chuồng nào trong danh sách.</p>
-      ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Mã khu</th>
-              <th>Tên chuồng</th>
-              <th>Sức chứa</th>
-              <th>Trạng thái</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pens.map((pen) => (
-              <tr key={pen.id}>
-                <td>{pen.id}</td>
-                <td>{pen.ma_khu}</td>
-                <td>{pen.ten_chuong}</td>
-                <td>{pen.suc_chua}</td>
-                <td>{pen.trang_thai}</td>
-                <td>
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEdit(pen.id)}
-                  >
-                    ✏️ Sửa
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(pen.id)}
-                  >
-                    🗑️ Xóa
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* 🔹 Bảng hiển thị danh sách chuồng */}
+      <Table
+        columns={columns}
+        dataSource={pens}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 10, responsive: true }}
+        
+      />
     </div>
   );
 };

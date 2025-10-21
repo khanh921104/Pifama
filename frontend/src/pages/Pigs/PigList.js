@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Table, Button, Space, Popconfirm, message, Typography } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import api from "../../api/axiosConfig";
 import "../../styles/table.css";
-import "../../styles/form.css";
+
+const { Title } = Typography;
 
 const PigList = () => {
   const [pigs, setPigs] = useState([]);
@@ -20,85 +23,93 @@ const PigList = () => {
       setPigs(res.data);
     } catch (err) {
       console.error("Lỗi khi tải danh sách heo:", err);
-      alert("Không thể tải danh sách heo!");
+      message.error("Không thể tải danh sách heo!");
     } finally {
       setLoading(false);
     }
   };
 
-  // ➕ Điều hướng sang thêm mới
+  // ➕ Thêm heo mới
   const handleAdd = () => navigate("/pigs/add");
 
-  // ✏️ Điều hướng sang sửa
+  // ✏️ Sửa thông tin heo
   const handleEdit = (id) => navigate(`/pigs/edit/${id}`);
 
   // 🗑️ Xóa heo
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa con heo này không?")) return;
     try {
       await api.delete(`/pigs/${id}`);
-      alert("Đã xóa heo thành công!");
-      fetchPigs(); // tải lại danh sách
+      message.success("Đã xóa heo thành công!");
+      fetchPigs(); // Cập nhật danh sách
     } catch (err) {
       console.error("Lỗi khi xóa heo:", err);
-      alert("Không thể xóa heo!");
+      message.error("Không thể xóa heo!");
     }
   };
 
-  if (loading) return <p>Đang tải dữ liệu...</p>;
+  // 📋 Cấu hình cột cho bảng
+  const columns = [
+    { title: "ID", dataIndex: "id", key: "id" },
+    { title: "Mã chuồng", dataIndex: "ma_chuong", key: "ma_chuong" },
+    { title: "Mã giống", dataIndex: "ma_giong", key: "ma_giong" },
+    {
+      title: "Ngày nhập",
+      dataIndex: "ngay_nhap",
+      key: "ngay_nhap",
+      render: (text) => new Date(text).toLocaleDateString(),
+    },
+    { title: "Cân nặng (kg)", dataIndex: "can_nang", key: "can_nang" },
+    { title: "Sức khỏe", dataIndex: "suc_khoe", key: "suc_khoe" },
+    {
+      title: "Hành động",
+      key: "actions",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record.id)}
+          >
+            Sửa
+          </Button>
+          <Popconfirm
+            title="Xác nhận xóa heo?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button danger icon={<DeleteOutlined />}>
+              Xóa
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="container" style={{ padding: "20px" }}>
-      <h2>Danh sách heo</h2>
+    <div style={{ padding: 24 }}>
+      <Space
+        style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}
+      >
+        <Title level={3}>🐷 Danh sách heo</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleAdd}
+        >
+          Thêm heo mới
+        </Button>
+      </Space>
 
-      {/* Nút thêm heo mới */}
-      <button className="btn-add" onClick={handleAdd}>
-        ➕ Thêm heo mới
-      </button>
-
-      {pigs.length === 0 ? (
-        <p>Chưa có heo nào trong danh sách.</p>
-      ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Mã chuồng</th>
-              <th>Mã giống</th>
-              <th>Ngày nhập</th>
-              <th>Cân nặng (kg)</th>
-              <th>Sức khỏe</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pigs.map((pig) => (
-              <tr key={pig.id}>
-                <td>{pig.id}</td>
-                <td>{pig.ma_chuong}</td>
-                <td>{pig.ma_giong}</td>
-                <td>{new Date(pig.ngay_nhap).toLocaleDateString()}</td>
-                <td>{pig.can_nang}</td>
-                <td>{pig.suc_khoe}</td>
-                <td>
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEdit(pig.id)}
-                  >
-                    ✏️ Sửa
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(pig.id)}
-                  >
-                    🗑️ Xóa
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={pigs}
+        loading={loading}
+        pagination={{ pageSize: 8 }}
+        bordered
+      />
     </div>
   );
 };

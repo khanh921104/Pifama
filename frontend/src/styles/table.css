@@ -53,3 +53,23 @@
   border-radius: 5px;
   cursor: pointer;
 }
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ant-table-content {
+  /* overflow-x: auto; */
+  /* padding: 10px; */
+  margin: 10px;
+
+}
+
+.ant-table {
+  width: 100% !important;
+}
+
