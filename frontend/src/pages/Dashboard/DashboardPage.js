@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../../api/axiosConfig";
+import api from "../../api/axiosConfig"; // <-- đảm bảo đường dẫn đúng
 import "./Dashboard.css"; 
 
 
@@ -15,51 +15,60 @@ const Dashboard = () => {
     assignment: 0,
     injects: 0,
   });
-
+  console.log("🔍 Dashboard component rendered");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // 🧩 Gọi API để lấy dữ liệu thống kê
   useEffect(() => {
+    console.log("🚀 useEffect Dashboard chạy");
     const fetchData = async () => {
+      setLoading(true);
+      console.log("Dashboard: bắt đầu fetchData");
       try {
-        const requests = [
-          axios.get("/pigs"),
-          axios.get("/pens"),
-          axios.get("/areas"),
-          axios.get("/staffs"),
-          axios.get("/foods"),
-          axios.get("/medicines"),
-          axios.get("/assignments"),
-          axios.get("/inject-medicines"),
+        const endpoints = [
+          "/pigs",
+          "/pens",
+          "/areas",
+          "/staffs",
+          "/foods",
+          "/medicines",
+          "/assignments",
+          "/inject-medicines",
         ];
 
+        const requests = endpoints.map((ep) => api.get(ep));
         const results = await Promise.allSettled(requests);
 
-        // helper: trả length nếu fulfilled và data là mảng
-        const len = (r) => (r.status === "fulfilled" && Array.isArray(r.value.data) ? r.value.data.length : 0);
-
-        // log chi tiết các lỗi
         results.forEach((r, idx) => {
-          if (r.status === "rejected") {
-            console.error(`Request #${idx} failed:`, r.reason?.response?.data || r.reason?.message || r.reason);
+          if (r.status === "fulfilled") {
+            console.log(`Dashboard: ${endpoints[idx]} ->`, r.value.data);
+          } else {
+            console.warn(`Dashboard: ${endpoints[idx]} failed ->`, r.reason?.response?.data || r.reason?.message || r.reason);
           }
         });
 
+        const getCount = (res) => {
+          if (!res || res.status !== "fulfilled") return 0;
+          const d = res.value.data;
+          return Array.isArray(d) ? d.length : (Number(d?.total) || Number(d?.count) || 0);
+        };
+
         setStats({
-          pigs: len(results[0]),
-          pens: len(results[1]),
-          areas: len(results[2]),
-          staffs: len(results[3]),
-          foods: len(results[4]),
-          medicines: len(results[5]),
-          assignment: len(results[6]),
-          injects: len(results[7]),
+          pigs: getCount(results[0]),
+          pens: getCount(results[1]),
+          areas: getCount(results[2]),
+          staffs: getCount(results[3]),
+          foods: getCount(results[4]),
+          medicines: getCount(results[5]),
+          assignment: getCount(results[6]),
+          injects: getCount(results[7]),
         });
       } catch (err) {
-        console.error("Unexpected error fetching dashboard data:", err);
+        console.error("Dashboard unexpected error:", err);
       } finally {
         setLoading(false);
+        console.log("Dashboard: fetchData finished");
       }
     };
 
