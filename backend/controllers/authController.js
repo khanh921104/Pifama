@@ -11,10 +11,22 @@ exports.login = async (req, res) => {
     }
 
     const pool = await sql.connect(process.env.SQLSERVER);
+
+    // ✅ Lấy thông tin tài khoản + chức vụ (nếu có)
     const result = await pool
       .request()
       .input("ten_dang_nhap", sql.VarChar(50), ten_dang_nhap)
-      .query("SELECT * FROM TaiKhoan WHERE ten_dang_nhap = @ten_dang_nhap");
+      .query(`
+        SELECT 
+          tk.id, 
+          tk.ten_dang_nhap, 
+          tk.mat_khau, 
+          ISNULL(nv.chuc_vu, 0) AS chuc_vu, 
+          nv.ten_nv
+        FROM TaiKhoan tk
+        LEFT JOIN NhanVien nv ON tk.ma_nv = nv.id
+        WHERE tk.ten_dang_nhap = @ten_dang_nhap
+      `);
 
     if (result.recordset.length === 0) {
       return res.status(401).json({ message: "Tên đăng nhập không tồn tại!" });
@@ -22,31 +34,36 @@ exports.login = async (req, res) => {
 
     const user = result.recordset[0];
 
-    // So sánh mật khẩu (giả sử mật khẩu đã hash bằng bcrypt)
-    // const isMatch = await bcrypt.compare(mat_khau, user.mat_khau);
-    // if (!isMatch) {
-    //   return res.status(401).json({ message: "Mật khẩu không chính xác!" });
-    // }
-
+    // 🔑 Kiểm tra mật khẩu (chưa dùng bcrypt)
     if (mat_khau !== user.mat_khau) {
-        return res.status(401).json({ message: "Mật khẩu không chính xác!" });
-        }
+      return res.status(401).json({ message: "Mật khẩu không chính xác!" });
+    }
 
-    // Tạo JWT Token
+    // 🔒 Tạo JWT có chứa chuc_vu (luôn là số)
     const token = jwt.sign(
-      { id: user.id, vai_tro: user.vai_tro },
+      { id: user.id, chuc_vu: Number(user.chuc_vu) },
       process.env.JWT_SECRET || "SECRET_KEY",
       { expiresIn: "1d" }
     );
 
-    res.json({ message: "Đăng nhập thành công!", token });
+    // ✅ Trả về token và thông tin cơ bản
+    res.json({
+      message: "Đăng nhập thành công!",
+      token,
+      user: {
+        id: user.id,
+        ten_dang_nhap: user.ten_dang_nhap,
+        ten_nv: user.ten_nv || "Không rõ tên",
+        chuc_vu: Number(user.chuc_vu),
+      },
+    });
   } catch (err) {
-    console.error("Lỗi khi đăng nhập:", err);
+    console.error("❌ Lỗi khi đăng nhập:", err);
     res.status(500).json({ message: "Lỗi khi đăng nhập" });
   }
 };
 
-// 👤 Lấy thông tin tài khoản hiện tại
+// 👤 Lấy thông tin người dùng hiện tại
 exports.getCurrentUser = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -61,16 +78,27 @@ exports.getCurrentUser = async (req, res) => {
       .request()
       .input("id", sql.Int, decoded.id)
       .query(`
-        SELECT tk.id, tk.ten_dang_nhap, tk.vai_tro, nv.ten_nv, nv.email, nv.so_dt, nv.ngay_sinh
+        SELECT 
+          tk.id, 
+          tk.ten_dang_nhap, 
+          ISNULL(nv.chuc_vu, 0) AS chuc_vu, 
+          nv.ten_nv, 
+          nv.email, 
+          nv.so_dt, 
+          nv.ngay_sinh
         FROM TaiKhoan tk
-        JOIN NhanVien nv ON tk.ma_nv = nv.id
+        LEFT JOIN NhanVien nv ON tk.ma_nv = nv.id
         WHERE tk.id = @id
       `);
 
-    if (result.recordset.length === 0)
+    if (result.recordset.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
 
-    res.json(result.recordset[0]);
+    const user = result.recordset[0];
+    user.chuc_vu = Number(user.chuc_vu || 0);
+
+    res.json(user);
   } catch (err) {
     console.error("Lỗi khi lấy thông tin tài khoản:", err);
     res.status(401).json({ message: "Token không hợp lệ hoặc đã hết hạn" });
