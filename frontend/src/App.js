@@ -24,8 +24,10 @@ import Header from "./pages/header";
 import Account from "./pages/Login/Account";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-const ROLE_ADMIN = 1;
-const ROLE_MANAGER = 2;
+const ROLE_FARM_MANAGER = 1;
+const ROLE_ASSISTANT_FARM_MANAGER = 2;
+const ROLE_WORKER = 3;
+const ROLE_ENGINEER = 4;
 
 const App = () => {
   return (
@@ -33,6 +35,7 @@ const App = () => {
       <Header />
       <Routes>
         {/* Public */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/account" element={<Account />} />
 
@@ -40,7 +43,7 @@ const App = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_WORKER,ROLE_ENGINEER]}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -50,7 +53,7 @@ const App = () => {
         <Route
           path="/pigs"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_WORKER]}>
               <PigList />
             </ProtectedRoute>
           }
@@ -58,7 +61,7 @@ const App = () => {
         <Route
           path="/pigs/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <PigForm />
             </ProtectedRoute>
           }
@@ -66,7 +69,7 @@ const App = () => {
         <Route
           path="/pigs/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <PigForm />
             </ProtectedRoute>
           }
@@ -76,7 +79,7 @@ const App = () => {
         <Route
           path="/areas"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER]}>
               <AreaList />
             </ProtectedRoute>
           }
@@ -84,7 +87,7 @@ const App = () => {
         <Route
           path="/areas/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER]}>
               <AreaForm />
             </ProtectedRoute>
           }
@@ -92,7 +95,7 @@ const App = () => {
         <Route
           path="/areas/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER]}>
               <AreaForm />
             </ProtectedRoute>
           }
@@ -102,7 +105,7 @@ const App = () => {
         <Route
           path="/pens"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <PenList />
             </ProtectedRoute>
           }
@@ -110,7 +113,7 @@ const App = () => {
         <Route
           path="/pens/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <PenForm />
             </ProtectedRoute>
           }
@@ -118,7 +121,7 @@ const App = () => {
         <Route
           path="/pens/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <PenForm />
             </ProtectedRoute>
           }
@@ -128,7 +131,7 @@ const App = () => {
         <Route
           path="/staffs"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <StaffList />
             </ProtectedRoute>
           }
@@ -136,7 +139,7 @@ const App = () => {
         <Route
           path="/staffs/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <StaffForm />
             </ProtectedRoute>
           }
@@ -144,7 +147,7 @@ const App = () => {
         <Route
           path="/staffs/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <StaffForm />
             </ProtectedRoute>
           }
@@ -154,7 +157,7 @@ const App = () => {
         <Route
           path="/foods"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <FoodList />
             </ProtectedRoute>
           }
@@ -162,7 +165,7 @@ const App = () => {
         <Route
           path="/foods/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <FoodForm />
             </ProtectedRoute>
           }
@@ -170,7 +173,7 @@ const App = () => {
         <Route
           path="/foods/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <FoodForm />
             </ProtectedRoute>
           }
@@ -180,7 +183,7 @@ const App = () => {
         <Route
           path="/medicines"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <MedicineList />
             </ProtectedRoute>
           }
@@ -188,7 +191,7 @@ const App = () => {
         <Route
           path="/medicines/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <MedicineForm />
             </ProtectedRoute>
           }
@@ -196,7 +199,7 @@ const App = () => {
         <Route
           path="/medicines/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <MedicineForm />
             </ProtectedRoute>
           }
@@ -206,7 +209,7 @@ const App = () => {
         <Route
           path="/assignments"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_WORKER]}>
               <AssignmentList />
             </ProtectedRoute>
           }
@@ -214,7 +217,7 @@ const App = () => {
         <Route
           path="/assignments/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <AssignmentForm />
             </ProtectedRoute>
           }
@@ -222,7 +225,7 @@ const App = () => {
         <Route
           path="/assignments/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <AssignmentForm />
             </ProtectedRoute>
           }
@@ -232,7 +235,7 @@ const App = () => {
         <Route
           path="/inject-medicines"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN, ROLE_MANAGER]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER,ROLE_ENGINEER]}>
               <InjectList />
             </ProtectedRoute>
           }
@@ -240,7 +243,7 @@ const App = () => {
         <Route
           path="/inject-medicines/add"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <InjectsForm />
             </ProtectedRoute>
           }
@@ -248,7 +251,7 @@ const App = () => {
         <Route
           path="/inject-medicines/edit/:id"
           element={
-            <ProtectedRoute allowedRoles={[ROLE_ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <InjectsForm />
             </ProtectedRoute>
           }
