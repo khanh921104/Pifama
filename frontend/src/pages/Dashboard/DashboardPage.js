@@ -1,8 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axiosConfig"; // <-- đảm bảo đường dẫn đúng
-import "./Dashboard.css"; 
+import api from "../../api/axiosConfig";
+import "./Dashboard.css";
 
+const getRoleFromStorage = () => {
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw && raw !== "undefined" && raw !== "null") {
+      const u = JSON.parse(raw);
+      const r = Number(u.chuc_vu ?? u.vai_tro ?? u.role ?? u.role_id);
+      if (!Number.isNaN(r)) return r;
+    }
+  } catch (err) {
+    console.warn("Dashboard: parse user error", err);
+  }
+
+  const token = localStorage.getItem("token");
+  if (token && token !== "undefined" && token !== "null") {
+    try {
+      const payload = token.split(".")[1];
+      if (payload) {
+        const json = JSON.parse(atob(payload));
+        const r = Number(json.chuc_vu ?? json.vai_tro ?? json.role ?? json.role_id);
+        if (!Number.isNaN(r)) return r;
+      }
+    } catch (err) {
+      console.warn("Dashboard: decode token error", err);
+    }
+  }
+  return null;
+};
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -15,71 +42,99 @@ const Dashboard = () => {
     assignment: 0,
     injects: 0,
   });
-  console.log("🔍 Dashboard component rendered");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // 🧩 Gọi API để lấy dữ liệu thống kê
+  // role ids must match App.js
+  const ROLE_FARM_MANAGER = 1;
+  const ROLE_ASSISTANT_FARM_MANAGER = 2;
+  const ROLE_WORKER = 3;
+  const ROLE_ENGINEER = 4;
+
+  // sections + allowed roles + backend endpoint
+  const sections = [
+    { key: "pigs", title: "🐖 Heo", to: "/pigs", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_WORKER], endpoint: "/pigs" },
+    { key: "pens", title: "🏠 Chuồng", to: "/pens", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER], endpoint: "/pens" },
+    { key: "areas", title: "🌾 Khu vực", to: "/areas", allowed: [ROLE_FARM_MANAGER], endpoint: "/areas" },
+    { key: "staffs", title: "👨‍🌾 Nhân viên", to: "/staffs", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER], endpoint: "/staffs" },
+    { key: "foods", title: "🍽️ Thức ăn", to: "/foods", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER], endpoint: "/foods" },
+    { key: "medicines", title: "💊 Thuốc", to: "/medicines", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER], endpoint: "/medicines" },
+    { key: "assignment", title: "📋 Phân công", to: "/assignments", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_WORKER], endpoint: "/assignments" },
+    // try primary endpoint; backend may use /inject-medicines or /injects
+    { key: "injects", title: "💉 Tiêm thuốc", to: "/inject-medicines", allowed: [ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER, ROLE_ENGINEER], endpoint: "/inject-medicines" },
+  ];
+
+  const role = getRoleFromStorage();
+
   useEffect(() => {
-    console.log("🚀 useEffect Dashboard chạy");
     const fetchData = async () => {
       setLoading(true);
-      console.log("Dashboard: bắt đầu fetchData");
       try {
-        const endpoints = [
-          "/pigs",
-          "/pens",
-          "/areas",
-          "/staffs",
-          "/foods",
-          "/medicines",
-          "/assignments",
-          "/inject-medicines",
-        ];
+        // determine which endpoints to call based on role (only fetch allowed ones)
+        const allowedSections = sections.filter((s) => role !== null && s.allowed.map(Number).includes(Number(role)));
+        const endpoints = allowedSections.map((s) => s.endpoint);
 
+        // if none allowed, still stop loading
+        if (endpoints.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // build requests
         const requests = endpoints.map((ep) => api.get(ep));
         const results = await Promise.allSettled(requests);
 
+        // populate a newStats starting from zeros
+        const newStats = { ...stats };
         results.forEach((r, idx) => {
+          const sec = allowedSections[idx];
+          if (!sec) return;
           if (r.status === "fulfilled") {
-            console.log(`Dashboard: ${endpoints[idx]} ->`, r.value.data);
+            const d = r.value.data;
+            const count = Array.isArray(d) ? d.length : Number(d?.total ?? d?.count) || 0;
+            newStats[sec.key] = count;
           } else {
-            console.warn(`Dashboard: ${endpoints[idx]} failed ->`, r.reason?.response?.data || r.reason?.message || r.reason);
+            // keep zero if failed; log for debug
+            console.warn(`Dashboard fetch failed for ${sec.endpoint}:`, r.reason?.response?.data || r.reason?.message || r.reason);
+            newStats[sec.key] = 0;
           }
         });
 
-        const getCount = (res) => {
-          if (!res || res.status !== "fulfilled") return 0;
-          const d = res.value.data;
-          return Array.isArray(d) ? d.length : (Number(d?.total) || Number(d?.count) || 0);
-        };
-
-        setStats({
-          pigs: getCount(results[0]),
-          pens: getCount(results[1]),
-          areas: getCount(results[2]),
-          staffs: getCount(results[3]),
-          foods: getCount(results[4]),
-          medicines: getCount(results[5]),
-          assignment: getCount(results[6]),
-          injects: getCount(results[7]),
+        // ensure other keys set to 0
+        sections.forEach((s) => {
+          if (!(s.key in newStats)) newStats[s.key] = 0;
         });
+
+        setStats(newStats);
       } catch (err) {
         console.error("Dashboard unexpected error:", err);
       } finally {
         setLoading(false);
-        console.log("Dashboard: fetchData finished");
       }
     };
 
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]); // re-run when role changes
 
   if (loading) return <h3>Đang tải dữ liệu...</h3>;
 
+  // if role not known, show message and ask to re-login
+  if (role === null) {
+    return (
+      <div style={{ padding: 30 }}>
+        <h2>📊 Bảng điều khiển quản lý trang trại</h2>
+        <p>Bạn chưa đăng nhập hoặc quyền chưa được xác định. Vui lòng đăng nhập lại.</p>
+      </div>
+    );
+  }
+
+  const currentRole = Number(role);
+
+  const visibleSections = sections.filter((s) => s.allowed.map(Number).includes(currentRole));
+
   return (
-    
-    <div style={{ padding: "30px" }} >
+    <div style={{ padding: "30px" }}>
       <h2>📊 Bảng điều khiển quản lý trang trại</h2>
 
       <div
@@ -90,91 +145,23 @@ const Dashboard = () => {
           marginTop: "30px",
         }}
       >
-        {/* 🐖 Heo */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/pigs")}
-        >
-          <h3>🐖 Heo</h3>
-          <p>{stats.pigs}</p>
-        </div>
+        {visibleSections.map((s) => (
+          <div key={s.key} className="card" style={cardStyle} onClick={() => navigate(s.to)}>
+            <h3>{s.title}</h3>
+            <p>{stats[s.key]}</p>
+          </div>
+        ))}
 
-        {/* 🏠 Chuồng */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/pens")}
-        >
-          <h3>🏠 Chuồng</h3>
-          <p>{stats.pens}</p>
-        </div>
-
-        {/* 🌾 Khu vực */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/areas")}
-        >
-          <h3>🌾 Khu vực</h3>
-          <p>{stats.areas}</p>
-        </div>
-
-        {/* 👨‍🌾 Nhân viên */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/staffs")}
-        >
-          <h3>👨‍🌾 Nhân viên</h3>
-          <p>{stats.staffs}</p>
-        </div>
-
-        {/* 🍽️ Thức ăn */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/foods")}
-        >
-          <h3>🍽️ Thức ăn</h3>
-          <p>{stats.foods}</p>
-        </div>
-
-        {/* 💊 Thuốc */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/medicines")}
-        >
-          <h3>💊 Thuốc</h3>
-          <p>{stats.medicines}</p>
-        </div>
-        
-        {/* phan cong */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/assignments")}
-        >
-          <h3>📋  Phân công</h3>
-          <p>{stats.assignment}</p>
-        </div>
-
-        {/* tiem thuoc */}
-        <div
-          className="card"
-          style={cardStyle}
-          onClick={() => navigate("/inject-medicines")}
-        >
-          <h3>💉  Tiêm thuốc</h3>
-          <p>{stats.injects}</p>
-        </div>
+        {visibleSections.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", textAlign: "center" }}>
+            <p>Bạn không có quyền xem mục nào trên dashboard.</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// 🎨 Style thẻ thống kê
 const cardStyle = {
   background: "#fff",
   padding: "20px",
