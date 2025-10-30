@@ -104,3 +104,37 @@ exports.getCurrentUser = async (req, res) => {
     res.status(401).json({ message: "Token không hợp lệ hoặc đã hết hạn" });
   }
 };
+
+// dang ky
+exports.register = async (req, res) => {
+  try {
+    const { ten_dang_nhap, mat_khau, ma_nv } = req.body;
+    if (!ten_dang_nhap || !mat_khau || !ma_nv) {
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin đăng ký!" });
+    } 
+    const pool = await sql.connect(process.env.SQLSERVER);
+
+    // Kiểm tra tên đăng nhập đã tồn tại  
+    const existingUser = await pool
+      .request()
+      .input("ten_dang_nhap", sql.VarChar(50), ten_dang_nhap)
+      .query("SELECT id FROM TaiKhoan WHERE ten_dang_nhap = @ten_dang_nhap");
+    if (existingUser.recordset.length > 0) {
+      return res.status(409).json({ message: "Tên đăng nhập đã tồn tại!" });
+    }
+    // Thêm tài khoản mới
+    await pool
+      .request()
+      .input("ten_dang_nhap", sql.VarChar(50), ten_dang_nhap)
+      .input("mat_khau", sql.VarChar(255), mat_khau) // Lưu mật khẩu chưa mã hóa
+      .input("ma_nv", sql.Int, ma_nv)
+      .query(`
+        INSERT INTO TaiKhoan (ten_dang_nhap, mat_khau, ma_nv)
+        VALUES (@ten_dang_nhap, @mat_khau, @ma_nv)
+      `);
+    res.status(201).json({ message: "Đăng ký tài khoản thành công!" });
+  } catch (err) {
+    console.error("Lỗi khi đăng ký tài khoản:", err);
+    res.status(500).json({ message: "Lỗi khi đăng ký tài khoản" });
+  }
+};
