@@ -69,6 +69,12 @@ const StaffList = () => {
           >
             <Button danger>🗑️ Xóa</Button>
           </Popconfirm>
+          <Button
+            onClick={() => navigate(`/auth/register/${record.id}`)}
+            type="default"
+          >
+            ✏️ Tài khoản
+          </Button>
         </Space>
       ),
     },

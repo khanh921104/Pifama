@@ -138,3 +138,26 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi đăng ký tài khoản" });
   }
 };
+
+// Kiểm tra nhân viên đã có tài khoản chưa
+export const checkAccountByStaffId = async (req, res) => {
+  try {
+    const { staffId } = req.params;
+
+    if (!staffId) {
+      return res.status(400).json({ message: "Thiếu mã nhân viên!" });
+    }
+
+    // 🔎 Tìm tài khoản theo staffId
+    const account = await db.Account.findOne({ where: { staff_id: staffId } });
+
+    if (account) {
+      return res.json({ hasAccount: true });
+    } else {
+      return res.json({ hasAccount: false });
+    }
+  } catch (error) {
+    console.error("❌ Lỗi checkAccountByStaffId:", error);
+    res.status(500).json({ message: "Lỗi server khi kiểm tra tài khoản!" });
+  }
+};

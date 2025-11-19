@@ -18,6 +18,7 @@ import AssignmentList from "./pages/Assignments/AssignmentList";
 import AssignmentForm from "./pages/Assignments/AssignmentForm";
 import InjectList from "./pages/Inject/InjectList";
 import InjectsForm from "./pages/Inject/InjectForm";
+import StaffAccount from "./pages/Staff/StaffAccount";
 
 
 import Header from "./pages/header";
@@ -149,6 +150,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
               <StaffForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/auth/register/:id"
+          element={
+            <ProtectedRoute allowedRoles={[ROLE_FARM_MANAGER, ROLE_ASSISTANT_FARM_MANAGER]}>
+              <StaffAccount />
             </ProtectedRoute>
           }
         />
